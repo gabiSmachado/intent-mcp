@@ -79,15 +79,17 @@ async def get_all():
 # if __name__ == "__main__":
 #     uvicorn.run("main:app", port=9100, reload=True)
 
+
 mcp = FastMCP.from_fastapi(app=app)
 
 if __name__ == "__main__":
-    try:
-        logger.info("Starting MCP server...")
-        mcp.run(
-            transport="http",
-            host="127.0.0.1",
-            port=9100,
-        )
-    except KeyboardInterrupt:
-        logger.info("Server shutting down...")
+     uvicorn.run("main:app", port=8080, log_level="info")
+    # try:
+    #     logger.info("Starting MCP server...")
+    #     mcp.run(
+    #         transport="http",
+    #         #host="127.0.0.1",
+    #         #port=9100,
+    #     )
+    # except KeyboardInterrupt:
+    #     logger.info("Server shutting down...")
