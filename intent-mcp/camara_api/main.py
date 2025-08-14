@@ -10,9 +10,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastmcp import FastMCP
 from models.models import *
-import uvicorn, json, logging
-
-
+import uvicorn, json, logging, asyncio
+from fastmcp.server.openapi import MCPType, RouteMap
 
 # Configure logging
 logging.basicConfig(
@@ -33,7 +32,7 @@ app = FastAPI(
 
 sessions = []
 
-@app.post('/sessions',operation_id="create_slice")
+@app.post('/sessions',operation_id="create_slice", tags=["users"])
 async def create_session(body: CreateSession):
     """
         Create a new session of Network Slice Booking.
@@ -52,7 +51,7 @@ async def create_session(body: CreateSession):
     return  {"session": info, "status_code": '200', "detail": 'Sucess'}
 
 
-@app.get('/sessions/{sessionId}',operation_id="get_slice")
+@app.get('/sessions/{sessionId}',operation_id="get_slice",  tags=["users"])
 async def get_session(sessionId: UUID):
     """
     Get session information from sessionId
@@ -80,16 +79,29 @@ async def get_all():
 #     uvicorn.run("main:app", port=9100, reload=True)
 
 
-mcp = FastMCP.from_fastapi(app=app)
+mcp = FastMCP.from_fastapi(
+            app=app,
+            route_maps=[
+            RouteMap(methods="*", pattern=r".*", mcp_type=MCPType.TOOL, tags={"users"}),
+            RouteMap(methods=["GET"], pattern=r".*", mcp_type=MCPType.RESOURCE),
+        ],
+)
 
-if __name__ == "__main__":
-     uvicorn.run("main:app", port=8080, log_level="info")
+    # tools = await mcp.get_tools()
+    # resources = await mcp.get_resources()
+
+    # print(f"Tools ({len(tools)}): {', '.join(tools.keys())}")
+    # print(f"Resources ({len(resources)}): {', '.join(resources.keys())}")
+
+
+
+#if __name__ == "__main__":
     # try:
     #     logger.info("Starting MCP server...")
     #     mcp.run(
     #         transport="http",
-    #         #host="127.0.0.1",
-    #         #port=9100,
+    #         host="127.0.0.1",
+    #         port=9100,
     #     )
     # except KeyboardInterrupt:
     #     logger.info("Server shutting down...")
