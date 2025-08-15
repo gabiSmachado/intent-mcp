@@ -1,0 +1,31 @@
+# Project configuration
+server:
+  title: "network-slice-booking"
+  description: "The Network Slice Booking (NSB) API provides programmable interface for developers to reserve a slice resource of a selected area within a period, and manage device access control as needed."
+  version: "0.1.0-rc.1"
+  license:
+    name: "Apache 2.0"
+    url: "https://www.apache.org/licenses/LICENSE-2.0.html"
+  logging:
+    name: "mcp-server"
+    level: "INFO"
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  uvicorn:
+    host: "127.0.0.1"
+    port: 9100
+  mcp:
+    transport: "http"
+    host: "127.0.0.1"
+    port: 9100
+
+client:
+  base_url: "http://127.0.0.1:9100/mcp"
+  logging:
+    name: "MCPClient"
+    level: "DEBUG"
+    console_level: "INFO"
+    file: "mcp_client.log"
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+geocoding:
+  nominatim_user_agent: "my_geocoder"

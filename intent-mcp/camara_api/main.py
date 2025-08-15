@@ -9,24 +9,47 @@ from fastapi import FastAPI, Path, Body, Header,HTTPException, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastmcp import FastMCP
-from models.models import *
+from .models.models import *
 import uvicorn, json, logging, asyncio
 from fastmcp.server.openapi import MCPType, RouteMap
+from pathlib import Path
+import yaml
 
-# Configure logging
+# Load configuration
+def _load_config():
+    cfg = {}
+    try:
+        # Look for config.yaml in current or parent directories
+        here = Path(__file__).resolve()
+        for p in [here.parent, here.parent.parent, here.parent.parent.parent]:
+            if (p / "config.yaml").exists():
+                with (p / "config.yaml").open("r", encoding="utf-8") as f:
+                    cfg = yaml.safe_load(f) or {}
+                break
+    except Exception:
+        cfg = {}
+    return cfg
+
+CONFIG = _load_config()
+
+# Configure logging from config
+log_cfg = (CONFIG.get("server") or {}).get("logging") or {}
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=getattr(logging, str(log_cfg.get("level", "INFO")).upper(), logging.INFO),
+    format=log_cfg.get("format", "%(asctime)s - %(name)s - %(levelname)s - %(message)s"),
 )
-logger = logging.getLogger("mcp-server")
+logger = logging.getLogger(log_cfg.get("name", "mcp-server"))
+
+server_cfg = CONFIG.get("server") or {}
+license_cfg = (server_cfg.get("license") or {})
 
 app = FastAPI(
-    title='network-slice-booking',
-    description= "The Network Slice Booking (NSB) API provides programmable interface for developers to reserve a slice resource of a selected area within a period, and manage device access control as needed.",
-    version= "0.1.0-rc.1",
+    title=str(server_cfg.get("title", "network-slice-booking")),
+    description=str(server_cfg.get("description", "Network Slice Booking API")),
+    version=str(server_cfg.get("version", "0.1.0")),
     license_info={
-        "name": "Apache 2.0",
-        "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
+        "name": str(license_cfg.get("name", "Apache 2.0")),
+        "url": str(license_cfg.get("url", "https://www.apache.org/licenses/LICENSE-2.0.html")),
     }
 )
 
@@ -76,7 +99,7 @@ async def get_all():
 # mcp.mount()
 
 # if __name__ == "__main__":
-#     uvicorn.run("main:app", port=9100, reload=True)
+#     uvicorn.run("main:app", host=(server_cfg.get("uvicorn") or {}).get("host", "127.0.0.1"), port=(server_cfg.get("uvicorn") or {}).get("port", 9100), reload=True)
 
 
 mcp = FastMCP.from_fastapi(
@@ -99,9 +122,9 @@ mcp = FastMCP.from_fastapi(
     # try:
     #     logger.info("Starting MCP server...")
     #     mcp.run(
-    #         transport="http",
-    #         host="127.0.0.1",
-    #         port=9100,
+    #         transport=(server_cfg.get("mcp") or {}).get("transport", "http"),
+    #         host=(server_cfg.get("mcp") or {}).get("host", "127.0.0.1"),
+    #         port=(server_cfg.get("mcp") or {}).get("port", 9100),
     #     )
     # except KeyboardInterrupt:
     #     logger.info("Server shutting down...")

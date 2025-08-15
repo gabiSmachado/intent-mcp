@@ -1,6 +1,8 @@
 from pydantic import BaseModel, field_validator, Field
 from geopy.geocoders import Nominatim
 from geopy.distance import great_circle
+from pathlib import Path
+import yaml
 
 class Point(BaseModel):
   
@@ -22,7 +24,21 @@ class Point(BaseModel):
     Returns:
       A tuple containing latitude and longitude, or None if geocoding fails.
     """
-    geolocator = Nominatim(user_agent="my_geocoder")
+    # Load user agent from config.yaml if available
+    user_agent = "my_geocoder"
+    try:
+      here = Path(__file__).resolve()
+      for p in [here.parent, here.parent.parent, here.parent.parent.parent]:
+        cfg_file = p / "config.yaml"
+        if cfg_file.exists():
+          with cfg_file.open("r", encoding="utf-8") as f:
+            cfg = yaml.safe_load(f) or {}
+          user_agent = ((cfg.get("geocoding") or {}).get("nominatim_user_agent")) or user_agent
+          break
+    except Exception:
+      pass
+
+    geolocator = Nominatim(user_agent=user_agent)
     try:
       location = geolocator.geocode(address)
       if location:

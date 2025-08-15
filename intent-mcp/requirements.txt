@@ -3,3 +3,4 @@ fastmcp==2.11.3
 geopy==2.4.1
 pydantic==2.11.7
 uvicorn==0.35.0
+PyYAML>=6.0,<7
